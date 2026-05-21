@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: controle_mercadorias_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: controle_mercadorias
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
