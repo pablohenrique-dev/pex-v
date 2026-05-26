@@ -5,6 +5,7 @@ import type {
 } from "@/lib/generated/prisma/client";
 
 import { MerchandiseStatusBadge } from "./merchandise-status-badge";
+import { merchandiseConditionLabels } from "../constants/merchandise-condition";
 
 type MerchandiseTableItem = {
   id: string;
@@ -20,17 +21,26 @@ type MerchandiseTableItem = {
 
 type MerchandiseTableProps = {
   merchandises: MerchandiseTableItem[];
+  isFiltered?: boolean;
 };
 
-export function MerchandiseTable({ merchandises }: MerchandiseTableProps) {
+export function MerchandiseTable({
+  merchandises,
+  isFiltered = false,
+}: MerchandiseTableProps) {
   if (merchandises.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-border bg-card p-8 text-center">
         <p className="text-sm font-medium text-foreground">
-          Nenhuma mercadoria cadastrada.
+          {isFiltered
+            ? "Nenhuma mercadoria encontrada."
+            : "Nenhuma mercadoria cadastrada."}
         </p>
+
         <p className="mt-1 text-sm text-muted-foreground">
-          Cadastre a primeira mercadoria para começar o controle.
+          {isFiltered
+            ? "Tente buscar por outro código ou destinatário."
+            : "Cadastre a primeira mercadoria para começar o controle."}
         </p>
       </div>
     );
@@ -78,7 +88,8 @@ export function MerchandiseTable({ merchandises }: MerchandiseTableProps) {
                     {merchandise.description}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Condição: {merchandise.condition}
+                    Condição:{" "}
+                    {merchandiseConditionLabels[merchandise.condition]}
                   </p>
                 </td>
 

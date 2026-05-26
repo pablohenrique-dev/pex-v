@@ -1,11 +1,47 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getDashboardData() {
+type GetDashboardDataParams = {
+  page?: number;
+  search?: string;
+};
+
+const PAGE_SIZE = 20;
+
+export async function getDashboardData({
+  page = 1,
+  search = "",
+}: GetDashboardDataParams = {}) {
+  const currentPage = Math.max(page, 1);
+  const skip = (currentPage - 1) * PAGE_SIZE;
+
+  const normalizedSearch = search.trim();
+
+  const merchandiseWhere = {
+    archivedAt: null,
+    ...(normalizedSearch && {
+      OR: [
+        {
+          code: {
+            contains: normalizedSearch,
+            mode: "insensitive" as const,
+          },
+        },
+        {
+          recipientName: {
+            contains: normalizedSearch,
+            mode: "insensitive" as const,
+          },
+        },
+      ],
+    }),
+  };
+
   const [
     totalMerchandises,
     pendingMerchandises,
     deliveredMerchandises,
     issueMerchandises,
+    totalFilteredMerchandises,
     merchandises,
   ] = await Promise.all([
     prisma.merchandise.count({
@@ -46,14 +82,17 @@ export async function getDashboardData() {
       },
     }),
 
+    prisma.merchandise.count({
+      where: merchandiseWhere,
+    }),
+
     prisma.merchandise.findMany({
-      where: {
-        archivedAt: null,
-      },
+      where: merchandiseWhere,
       orderBy: {
         createdAt: "desc",
       },
-      take: 10,
+      skip,
+      take: PAGE_SIZE,
       select: {
         id: true,
         code: true,
@@ -68,6 +107,11 @@ export async function getDashboardData() {
     }),
   ]);
 
+  const totalPages = Math.max(
+    Math.ceil(totalFilteredMerchandises / PAGE_SIZE),
+    1,
+  );
+
   return {
     metrics: {
       totalMerchandises,
@@ -76,5 +120,16 @@ export async function getDashboardData() {
       issueMerchandises,
     },
     merchandises,
+    pagination: {
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      totalItems: totalFilteredMerchandises,
+      totalPages,
+      hasPreviousPage: currentPage > 1,
+      hasNextPage: currentPage < totalPages,
+    },
+    filters: {
+      search: normalizedSearch,
+    },
   };
 }

@@ -11,17 +11,40 @@ import {
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
 import { MetricCard } from "@/features/merchandises/components/metric-card";
 import { MerchandiseTable } from "@/features/merchandises/components/merchandise-table";
+import { MerchandiseTableFilters } from "@/features/merchandises/components/merchandise-table-filters";
+import { MerchandiseTablePagination } from "@/features/merchandises/components/merchandise-table-pagination";
 import { getDashboardData } from "@/features/merchandises/data/get-dashboard-data";
 import { getCurrentUser } from "@/lib/current-user";
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+  }>;
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
     redirect("/login");
   }
 
-  const { metrics, merchandises } = await getDashboardData();
+  const params = await searchParams;
+
+  const page = Number(params.page ?? "1");
+  const search = params.q ?? "";
+
+  const { metrics, merchandises, pagination, filters } = await getDashboardData(
+    {
+      page: Number.isNaN(page) ? 1 : page,
+      search,
+    },
+  );
+
+  const isFiltered = Boolean(filters.search);
 
   return (
     <div className="space-y-6">
@@ -83,19 +106,28 @@ export default async function DashboardPage() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Mercadorias recentes
+              Mercadorias
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Últimos registros cadastrados no sistema.
+              Consulte as mercadorias cadastradas por código ou destinatário.
             </p>
           </div>
+
+          <MerchandiseTableFilters search={filters.search} />
         </div>
 
-        <MerchandiseTable merchandises={merchandises} />
+        <MerchandiseTable merchandises={merchandises} isFiltered={isFiltered} />
+
+        <MerchandiseTablePagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          search={filters.search}
+        />
       </section>
     </div>
   );
