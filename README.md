@@ -65,4 +65,4 @@ O sistema tem como objetivo permitir o cadastro, acompanhamento e organização 
 Clone o repositório:
 
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/pablohenrique-dev/pex-v.git
